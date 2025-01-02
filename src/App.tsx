@@ -256,15 +256,6 @@ export const App: React.FC = () => {
           </form>
         </header>
 
-        {/* {tempTodo ? (
-          <div className="todoapp__todo-item">
-            <span className="todoapp__todo-title">{tempTodo.title}</span>
-            <span className="loader"></span>
-          </div>
-        ) : (
-          ''
-        )} */}
-
         {!isLoadingTodos && todos.length ? (
           <TodoList
             clearDisabled={isClearCompletedDesabled}
@@ -311,13 +302,3 @@ export const App: React.FC = () => {
     </div>
   );
 };
-
-// Unable to load todos
-// <br />
-// Title should not be empty
-// <br />
-// Unable to add a todo
-// <br />
-// Unable to delete a todo
-// <br />
-// Unable to update a todo

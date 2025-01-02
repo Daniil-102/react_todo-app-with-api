@@ -36,17 +36,8 @@ export const TodoItem: React.FC<Props> = ({
     event.preventDefault();
 
     if (!input.trim()) {
-      // try {
-      //   await deleteTodo(todo.id);
-      //   setIsEditing(false);
-      // } catch (error) {
-      //   showError('Unable to delete a todo');
-      // } finally {
-      //   setIsLoadingEditing(false);
-      // }
       deleteTodo(todo.id);
     } else if (input.trim() === todo.title) {
-      // setIsLoadingEditing(false);
       setIsEditing(false);
     } else {
       setIsLoadingEditing(true);
