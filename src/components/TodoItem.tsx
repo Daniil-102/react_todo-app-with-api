@@ -6,8 +6,7 @@ import { editTodo } from '../api/todos';
 interface Props {
   todo: Todo;
   handleChangeCompleted: (todo: Todo) => Promise<void>;
-  isCheckLoading: number;
-  deleteDisabled: number[];
+  loadingTodoIds: number[];
   deleteTodo: (id: number) => Promise<void>;
   showError: (message: string) => void;
   setTodos: React.Dispatch<React.SetStateAction<Todo[]>>;
@@ -17,8 +16,7 @@ export const TodoItem: React.FC<Props> = ({
   todo,
   setTodos,
   handleChangeCompleted,
-  isCheckLoading,
-  deleteDisabled,
+  loadingTodoIds,
   deleteTodo,
   showError,
 }) => {
@@ -114,7 +112,7 @@ export const TodoItem: React.FC<Props> = ({
             type="button"
             className="todo__remove"
             data-cy="TodoDelete"
-            disabled={deleteDisabled.includes(todo.id)}
+            disabled={loadingTodoIds.includes(todo.id)}
           >
             ×
           </button>
@@ -125,10 +123,7 @@ export const TodoItem: React.FC<Props> = ({
       <div
         data-cy="TodoLoader"
         className={cn('modal overlay', {
-          'is-active':
-            deleteDisabled.includes(todo.id) ||
-            isCheckLoading === todo.id ||
-            isLoadingEditing,
+          'is-active': loadingTodoIds.includes(todo.id) || isLoadingEditing,
         })}
       >
         <div className="modal-background has-background-white-ter" />

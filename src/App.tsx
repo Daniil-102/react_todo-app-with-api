@@ -5,33 +5,29 @@ import { addTodo, deleteTodo, editTodo, getTodos, USER_ID } from './api/todos';
 import { Todo } from './types/Todo';
 import { TodoList } from './components/TodoList';
 
-interface Errors {
-  messages: string[];
-}
-
 export const App: React.FC = () => {
   const [isClearCompletedDesabled, setIsClearCompletedDesabled] =
     useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
-  const [errors, setErrors] = useState<Errors>({ messages: [] });
-  const [input, setInput] = useState('');
+  const [errors, setErrors] = useState<Set<string>>(new Set());
+  const [title, setTitle] = useState('');
   const [isLoadingTodos, setIsLoadingTodos] = useState(true);
-  const [loadingTodos, setLoadingTodos] = useState<number[]>([]);
+  const [loadingTodoIds, setLoadingTodoIds] = useState<number[]>([]);
   const [isNotificationVisible, setNotificationVisible] = useState(false);
-  const [isInputDisabled, setIsInputDisabled] = useState(false);
-  const [isAllTodosActive, setIsAllTodosActive] = useState(false);
-  const [isCheckLoading, setIsCkeckLoading] = useState(-1);
+  const [isTitleDisabled, setIsTitleDisabled] = useState(false);
   const [errorTimeout, setErrorTimeout] = useState<NodeJS.Timeout | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [isInputDisabled, loadingTodos]);
+    titleRef.current?.focus();
+  }, [isTitleDisabled, loadingTodoIds]);
 
   useEffect(() => {
-    setIsAllTodosActive(todos.every(todo => todo.completed));
+    setIsClearCompletedDesabled(todos.every(todo => !todo.completed));
   }, [todos]);
+
+  const isAllTodosActive = todos.every(todo => todo.completed);
 
   const updateClearCompletedState = useCallback((todosList: Todo[]) => {
     setIsClearCompletedDesabled(!todosList.some(todo => todo.completed));
@@ -39,9 +35,7 @@ export const App: React.FC = () => {
 
   const showError = useCallback(
     (message: string) => {
-      setErrors(prev => ({
-        messages: [...new Set([...prev.messages, message])],
-      }));
+      setErrors(prev => new Set(prev).add(message));
       setNotificationVisible(true);
 
       if (errorTimeout) {
@@ -49,7 +43,7 @@ export const App: React.FC = () => {
       }
 
       const timeout = setTimeout(() => {
-        setErrors({ messages: [] });
+        setErrors(new Set());
         setNotificationVisible(false);
       }, 3000);
 
@@ -59,7 +53,7 @@ export const App: React.FC = () => {
   );
 
   const handleChangeCompleted = async (todo: Todo) => {
-    setIsCkeckLoading(todo.id);
+    setLoadingTodoIds(prev => [...prev, todo.id]);
     try {
       const editedTodo = { ...todo, completed: !todo.completed };
 
@@ -70,25 +64,25 @@ export const App: React.FC = () => {
     } catch (error) {
       showError('Unable to update a todo');
     } finally {
-      setIsCkeckLoading(-1);
+      setLoadingTodoIds(prev => prev.filter(t => t !== todo.id));
     }
   };
 
   const handleFormSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (input.trim().length === 0) {
+    if (title.trim().length === 0) {
       showError('Title should not be empty');
 
       return;
     }
 
-    setIsInputDisabled(true);
+    setIsTitleDisabled(true);
 
     const temporaryTodo: Todo = {
       id: 0,
       userId: USER_ID,
-      title: input.trim(),
+      title: title.trim(),
       completed: false,
     };
 
@@ -97,7 +91,7 @@ export const App: React.FC = () => {
     try {
       const newTodo = await addTodo({
         userId: USER_ID,
-        title: input.trim(),
+        title: title.trim(),
         completed: false,
       });
 
@@ -109,13 +103,13 @@ export const App: React.FC = () => {
         return updatedTodos;
       });
       setTempTodo(null);
-      setInput('');
+      setTitle('');
     } catch (error) {
       showError('Unable to add a todo');
       setTempTodo(null);
     } finally {
-      setIsInputDisabled(false);
-      inputRef.current?.focus();
+      setIsTitleDisabled(false);
+      titleRef.current?.focus();
     }
   };
 
@@ -152,12 +146,12 @@ export const App: React.FC = () => {
     } catch (error) {
       showError('Unable to delete a todo');
     } finally {
-      inputRef.current?.focus();
+      titleRef.current?.focus();
     }
   };
 
   const handleDeleteTodo = async (id: number) => {
-    setLoadingTodos(prev => [...prev, id]);
+    setLoadingTodoIds(prev => [...prev, id]);
 
     try {
       await deleteTodo(id);
@@ -171,8 +165,8 @@ export const App: React.FC = () => {
     } catch (error) {
       showError('Unable to delete a todo');
     } finally {
-      setLoadingTodos(prev => prev.filter(loadingId => loadingId !== id));
-      inputRef.current?.focus();
+      setLoadingTodoIds(prev => prev.filter(loadingId => loadingId !== id));
+      titleRef.current?.focus();
     }
   };
 
@@ -245,13 +239,13 @@ export const App: React.FC = () => {
           <form onSubmit={handleFormSubmit}>
             <input
               data-cy="NewTodoField"
-              ref={inputRef}
+              ref={titleRef}
               type="text"
               className="todoapp__new-todo"
               placeholder="What needs to be done?"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              disabled={isInputDisabled}
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              disabled={isTitleDisabled}
             />
           </form>
         </header>
@@ -261,9 +255,8 @@ export const App: React.FC = () => {
             clearDisabled={isClearCompletedDesabled}
             handleChangeCompleted={handleChangeCompleted}
             tempTodo={tempTodo}
-            deleteDisabled={loadingTodos}
+            loadingTodoIds={loadingTodoIds}
             deleteTodo={handleDeleteTodo}
-            isCheckLoading={isCheckLoading}
             todos={todos}
             deleteCompleted={handleDeleteCompletedTodos}
             showError={showError}
@@ -289,13 +282,13 @@ export const App: React.FC = () => {
           className="delete"
           onClick={() => {
             setNotificationVisible(false);
-            setErrors({ messages: [] });
+            setErrors(new Set());
             if (errorTimeout) {
               clearTimeout(errorTimeout);
             }
           }}
         />
-        {errors.messages.map((error, index) => (
+        {Array.from(errors).map((error, index) => (
           <div key={index}>{error}</div>
         ))}
       </div>

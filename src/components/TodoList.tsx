@@ -6,12 +6,11 @@ import { TodoItem } from './TodoItem';
 interface Props {
   todos: Todo[];
   deleteTodo: (id: number) => Promise<void>;
-  deleteDisabled: number[];
+  loadingTodoIds: number[];
   tempTodo: Todo | null;
   deleteCompleted: () => Promise<void>;
   clearDisabled: boolean;
   handleChangeCompleted: (todo: Todo) => Promise<void>;
-  isCheckLoading: number;
   showError: (message: string) => void;
 }
 
@@ -24,12 +23,11 @@ enum Filter {
 export const TodoList: React.FC<Props> = ({
   todos: todosData,
   deleteTodo,
-  deleteDisabled,
+  loadingTodoIds,
   tempTodo,
   deleteCompleted,
   clearDisabled,
   handleChangeCompleted,
-  isCheckLoading,
   showError,
 }) => {
   const [todos, setTodos] = useState<Todo[]>(todosData);
@@ -64,8 +62,7 @@ export const TodoList: React.FC<Props> = ({
             key={todo.id}
             showError={showError}
             deleteTodo={deleteTodo}
-            deleteDisabled={deleteDisabled}
-            isCheckLoading={isCheckLoading}
+            loadingTodoIds={loadingTodoIds}
             handleChangeCompleted={handleChangeCompleted}
             todo={todo}
             setTodos={setTodos}
@@ -91,7 +88,7 @@ export const TodoList: React.FC<Props> = ({
               type="button"
               className="todo__remove"
               data-cy="TodoDelete"
-              disabled={deleteDisabled.includes(tempTodo.id)}
+              disabled={loadingTodoIds.includes(tempTodo.id)}
             >
               ×
             </button>
